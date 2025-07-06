@@ -8,11 +8,25 @@ local minSpeed = 30
 local maxSpeed = 100
 local dragging = false
 local noclipEnabled = false
-local gui -- variável pra guardar a GUI
 
--- Função que cria a GUI (e remove a antiga, se tiver)
+local gui
+local fill, knob, label, noclipBtn
+
+local function updateSlider()
+	local pct = (speed - minSpeed) / (maxSpeed - minSpeed)
+	if fill then fill.Size = UDim2.new(pct, 0, 1, 0) end
+	if knob then knob.Position = UDim2.new(pct, 0, 0.5, 0) end
+	if label then label.Text = "Velocidade: "..speed end
+end
+
+local function applyEffects(character)
+	local hum = character:WaitForChild("Humanoid")
+	if hum then
+		hum.WalkSpeed = speed
+	end
+end
+
 local function createGui()
-	-- Remove GUI antiga, se existir
 	if player.PlayerGui:FindFirstChild("ShynjxGUI") then
 		player.PlayerGui.ShinjxGUI:Destroy()
 	end
@@ -37,7 +51,7 @@ local function createGui()
 	title.TextSize = 20
 	title.TextColor3 = Color3.fromRGB(0, 170, 255)
 
-	local label = Instance.new("TextLabel", frame)
+	label = Instance.new("TextLabel", frame)
 	label.Size = UDim2.new(1, 0, 0, 24)
 	label.Position = UDim2.new(0, 0, 0, 40)
 	label.BackgroundTransparency = 1
@@ -52,12 +66,12 @@ local function createGui()
 	bar.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
 	bar.BorderSizePixel = 0
 
-	local fill = Instance.new("Frame", bar)
+	fill = Instance.new("Frame", bar)
 	fill.Size = UDim2.new((speed - minSpeed) / (maxSpeed - minSpeed), 0, 1, 0)
 	fill.BackgroundColor3 = Color3.fromRGB(0, 170, 255)
 	fill.BorderSizePixel = 0
 
-	local knob = Instance.new("ImageButton", bar)
+	knob = Instance.new("ImageButton", bar)
 	knob.Size = UDim2.new(0, 18, 0, 18)
 	knob.Position = UDim2.new((speed - minSpeed) / (maxSpeed - minSpeed), -9, 0.5, -9)
 	knob.AnchorPoint = Vector2.new(0.5, 0.5)
@@ -65,10 +79,9 @@ local function createGui()
 	knob.Image = "rbxassetid://3570695787"
 	knob.ImageColor3 = Color3.fromRGB(0, 170, 255)
 
-	local noclipBtn = Instance.new("TextButton", frame)
+	noclipBtn = Instance.new("TextButton", frame)
 	noclipBtn.Size = UDim2.new(0, 120, 0, 36)
 	noclipBtn.Position = UDim2.new(0.1, 0, 0, 110)
-	noclipBtn.Text = "Noclip: OFF"
 	noclipBtn.Font = Enum.Font.GothamBold
 	noclipBtn.TextSize = 16
 	noclipBtn.TextColor3 = Color3.new(1, 1, 1)
@@ -92,16 +105,7 @@ local function createGui()
 	credit.TextSize = 14
 	credit.TextColor3 = Color3.fromRGB(150, 150, 150)
 
-	-- Variáveis para o slider e botão
-	local dragging = false
-
-	-- Função pra atualizar o slider
-	local function updateSlider()
-		local pct = (speed - minSpeed) / (maxSpeed - minSpeed)
-		fill.Size = UDim2.new(pct, 0, 1, 0)
-		knob.Position = UDim2.new(pct, 0, 0.5, 0)
-		label.Text = "Velocidade: "..speed
-	end
+	noclipBtn.Text = noclipEnabled and "Noclip: ON" or "Noclip: OFF"
 
 	knob.MouseButton1Down:Connect(function()
 		dragging = true
@@ -125,13 +129,11 @@ local function createGui()
 		end
 	end)
 
-	-- Noclip toggle
 	noclipBtn.MouseButton1Click:Connect(function()
 		noclipEnabled = not noclipEnabled
 		noclipBtn.Text = noclipEnabled and "Noclip: ON" or "Noclip: OFF"
 	end)
 
-	-- Steel teleport
 	steelBtn.MouseButton1Click:Connect(function()
 		local char = player.Character
 		if not char then return end
@@ -146,26 +148,16 @@ local function createGui()
 	return guiLocal
 end
 
--- Função que aplica speed e noclip no personagem atual
-local function applyEffects(character)
-	local hum = character:WaitForChild("Humanoid")
-	-- Atualiza a velocidade do humanoide sempre que mudar a variável speed
-	hum.WalkSpeed = speed
-end
-
--- Sempre que personagem nascer, reaplica speed e noclip e recria GUI
 player.CharacterAdded:Connect(function(char)
 	applyEffects(char)
-	createGui()
+	gui = createGui()
 end)
 
--- Se já existir personagem, cria GUI e aplica speed
 if player.Character then
 	applyEffects(player.Character)
-	createGui()
+	gui = createGui()
 end
 
--- Loop para aplicar speed e noclip sempre que o frame renderizar
 RunService.RenderStepped:Connect(function()
 	local char = player.Character
 	if char then
